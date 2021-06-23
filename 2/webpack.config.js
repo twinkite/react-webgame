@@ -1,4 +1,5 @@
 const path = require('path');
+const RefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
@@ -22,17 +23,28 @@ module.exports = {
                         targets: {
                             browsers: ['> 1% in KR'],   // browserslist
                         },
+                        debug: true
                     }],
                     '@babel/preset-react',
+                ],
+                plugins:[
+                    'react-refresh/babel',
                 ],
             }            
         }]
     },
     plugins: [
         new webpack.LoaderOptionsPlugin({ debug:true }),
+        new RefreshWebpackPlugin(),
     ],
     output: {
-        path: path.join(__dirname, 'abc', '/app', 'dist'), // __dirname : 현재 폴더 안에있는 , 'dist' : dist 폴더. 현재 폴더 안의 dist폴더를 의미.
-        filename: 'app.js' 
+        path: path.join(__dirname, 'dist'), // __dirname : 현재 폴더 안에있는 , 'dist' : dist 폴더. 현재 폴더 안의 dist폴더를 의미.
+        filename: 'app.js',
+        publicPath: '/dist/', 
     }, //출력
+    devServer:{
+        publicPath:'/dist/',
+        hot:true,
+        port:3000,
+    }
 };
