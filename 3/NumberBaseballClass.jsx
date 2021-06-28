@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import Try from './Try';
+import React, { PureComponent, createRef } from 'react';
+import Try from './TryClass';
 
 function getNumbers(){
     const candidate = [1,2,3,4,5,6,7,8,9];
@@ -11,13 +11,15 @@ function getNumbers(){
     return array;
 }
 
-class NumberBaseball extends Component {
+class NumberBaseballClass extends PureComponent {
     state = {
         result: '',
         value: '',
         answer : getNumbers(),
         tries: [],  // 배열에 값을 넣을 때 push 쓰면 X
     };
+
+    inputRef = createRef();
 
     onSubmitForm = (e) => {
         const { value, result, tries, answer } = this.state;
@@ -35,6 +37,7 @@ class NumberBaseball extends Component {
                 answer: getNumbers(),
                 tries: [],
             })
+            this.inputRef.current.focus();
         } else {   // 틀린 경우
             const answerArray = value.split('').map((v) => parseInt(v));
             let strike = 0;
@@ -49,6 +52,7 @@ class NumberBaseball extends Component {
                     answer: getNumbers(),
                     tries: [],
                 });
+                this.inputRef.current.focus();
             } else {
                 for(let i = 0; i < 4 ; i++){
                     if(answerArray[i] === answer[i]){
@@ -59,10 +63,11 @@ class NumberBaseball extends Component {
                 }
                 this.setState((prevState) => {
                     return {
-                        tries: [...tries, { try: value, result: `${strike} 스트라이크, ${ball} 볼입니다`}],
+                        tries: [...prevState.tries, { try: value, result: `${strike} 스트라이크, ${ball} 볼입니다`}],
                         value:'',
                     }
                 })
+                this.inputRef.current.focus();
             }
 
         }
@@ -80,7 +85,7 @@ class NumberBaseball extends Component {
             <>
                 <h1>{result}</h1>
                 <form onSubmit = {this.onSubmitForm}>
-                    <input maxLength={4} value={value} onChange={this.onChangeInput} />   
+                    <input ref = {this.inputRef} maxLength={4} value={value} onChange={this.onChangeInput} />   
                 </form>
                 <div>시도 : { tries.length }</div>
                 <ul>
@@ -96,4 +101,4 @@ class NumberBaseball extends Component {
 
 }
 
-export default NumberBaseball;
+export default NumberBaseballClass;
