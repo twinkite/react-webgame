@@ -1,8 +1,8 @@
 import React, { memo } from 'react';
 
-const Try = memo(({ TryInfo }) => {
+const Try = memo(({ tryInfo }) => {
   return (
-      <li>{ TryInfo }</li>    
+      <li>{ tryInfo }</li>    
   )
 })
 
