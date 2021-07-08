@@ -21,9 +21,15 @@ export const TableContext = createContext({
 
 const initialState = {
   tableData: [],
-  timer: '0',
+  data: {
+    row: 0,
+    col: 0,
+    mine: 0,
+  },
+  timer: 0,
   result: '',
   halted: true,
+  openedCount: 0,
 }
 
 const plantMine = (row, col, mine) => {
@@ -62,22 +68,103 @@ export const CLICK_MINE = 'CLICK_MINE';
 export const FLAG_CELL = 'FLAG_CELL';
 export const QUESTION_CELL = 'QUESTION_CELL';
 export const NORMALIZE_CELL = 'NORMALIZE_CELL';
+export const INCREMENT_TIMER = 'INCREMENT_TIMER';
 
 const reducer = (state, action) => {
   switch (action.type) {
     case START_GAME:
       return {
         ...state,
+        data: {
+          row : action.row, 
+          col : action.col, 
+          mine : action.mine,
+        },
         tableData: plantMine(action.row, action.col, action.mine),
         halted: false,
+        openedCount: 0,
+        timer : 0,
+        result: '',
       };
     case OPEN_CELL: {
       const tableData = [...state.tableData];
       tableData[action.row] = [...state.tableData[action.row]];
-      tableData[action.row][action.col] = CODE.OPENED;
+      tableData.forEach((row, i) => {
+        tableData[i] = [...state.tableData[i]];
+      });
+      const checked = [];
+      let openedCount =0;
+      const checkAround = (row, col) => {
+        if (row < 0 || row >= tableData.length || col < 0 || col >= tableData[0].length) {
+          return;
+        } // 상하좌우 없는칸은 안 열기
+        if ([CODE.OPENED, CODE.FLAG,CODE.MINE, CODE.FLAG_MINE, CODE.QUESTION_MINE, CODE.QUESTION].includes(tableData[row][col])) {
+          return;
+        } // 닫힌 칸만 열기
+        if (checked.includes(row + '/' + col)) {
+          return;
+        } else {
+          checked.push(row + '/' + col);
+        } // 한 번 연칸은 무시하기
+      
+        let around = [
+          tableData[row][col - 1], 
+          tableData[row][col + 1]
+        ];
+        if (tableData[row-1]){
+          around = around.concat(
+            tableData[row - 1][col - 1], 
+            tableData[row - 1][col], 
+            tableData[row - 1][col + 1]);
+        };
+        if(tableData[row + 1]){
+          around = around.concat(
+            tableData[row + 1][col - 1],
+            tableData[row + 1][col],
+            tableData[row + 1][col + 1],
+          );
+        }
+        if(tableData[row][col] === CODE.NORMAL){
+          openedCount += 1;
+        }
+        const count = around.filter(function (v) {
+          return [CODE.MINE, CODE.FLAG_MINE, CODE.QUESTION_MINE].includes(v);
+        }).length;
+        tableData[row][col] = count;
+        if (count === 0){
+          const near = [];
+          if( row - 1 > -1){
+            near.push([row - 1, col - 1]);
+            near.push([row - 1, col]);
+            near.push([row - 1, col + 1]);
+          }
+          near.push([row, col - 1]);
+          near.push([row, col + 1]);
+          if( row + 1 < tableData.length ) { 
+            near.push([row + 1, col - 1]);
+            near.push([row + 1, col]);
+            near.push([row + 1, col + 1]);
+          }
+          near.forEach((n) => {
+            if(tableData[n[0]][n[1]] !== CODE.OPENED ){
+              checkAround(n[0], n[1]);
+            }
+          });
+        }
+      };
+      checkAround(action.row, action.col);
+      let halted = false;
+      let result = '';
+      if(state.data.row * state.data.col - state.data.mine === state.openedCount+ openedCount){
+        halted = true;
+        result =`${state.timer}초만에 승리하셨습니다`;
+      }
       return {
         ...state,
         tableData,
+        openedCount: state.openedCount + openedCount,
+        halted : halted,
+        result,
       };
     }
     case CLICK_MINE: {
@@ -129,6 +216,12 @@ const reducer = (state, action) => {
         tableData
       }
     }
+    case INCREMENT_TIMER: {
+      return {
+        ...state,
+        timer: state.timer + 1,
+      }
+    }
     default: 
       return state;
   }
@@ -140,6 +233,18 @@ const MineSearch = () => {
   const value = useMemo(() => ({tableData, dispatch, halted}), [tableData, halted]);
   // contextAPI를 쓰면 성능최적화가 까다로움. => useMemo를 사용해서 캐싱을 해줘야 함. 
   // tableContext.Provider로 묶어놓으면 하위 컴포넌트에서 접근이 가능
+  useEffect(() => {
+    let timer;
+    if(halted === false){ 
+      timer = setInterval(() => {
+        dispatch({ type: INCREMENT_TIMER });
+      }, 1000); 
+    }
+    return () => {
+      clearInterval(timer);
+    }
+  }, [halted]);
+  
   return (
     <TableContext.Provider value={value}> 
       <Form />
