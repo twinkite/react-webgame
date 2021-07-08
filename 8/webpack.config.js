@@ -3,7 +3,7 @@ const RefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
-  name: 'mineSearch',
+  name: 'tictactoe',
   mode: 'development', // 실서비스 : production
   devtool: 'eval',
   resolve: {
